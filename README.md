@@ -49,6 +49,7 @@ aws-static-site-portfolio/
 ├── docs/
 │   ├── day01.md
 │   └── day02.md
+│   └── day03.md
 ├── notes/
 │   └── saa-review.md
 ├── website/
