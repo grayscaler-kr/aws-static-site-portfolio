@@ -60,6 +60,7 @@ aws-static-site-portfolio/
 ## 7. 진행 기록
 - Day 1: 프로젝트 저장소 생성, 기본 디렉토리 구성, index.html 작성 및 GitHub 반영
 - Day 2: AWS 정적 웹사이트 배포 아키텍처 문서화, 사용 예정 AWS 서비스 역할 정리, SAA 복습 노트 갱신
+- Day 3: index.html 갱신 및 S3 배포, Cloudfront 연결, 사이트 열림 확인
 
 ## 8. 다음 작업
 - AWS 콘솔에서 S3 버킷 생성
