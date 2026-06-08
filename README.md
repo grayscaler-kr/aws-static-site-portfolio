@@ -65,4 +65,4 @@ aws-static-site-portfolio/
 - Day 2: AWS 정적 웹사이트 배포 아키텍처 문서화, 사용 예정 AWS 서비스 역할 정리, SAA 복습 노트 갱신
 - Day 3: `index.html` 갱신 및 S3 배포, CloudFront 연결, 사이트 열림 확인
 - Day 4: CloudFront Custom Error Response 설정, `error.html` 반환 확인, Default root object 및 캐시 동작 확인, Invalidation과 S3 Versioning 확인 
-
+- Day 5: Route 53과 ACM 개념 정리, 사용자 지정 도메인 및 HTTPS 적용 흐름 문서화

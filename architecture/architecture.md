@@ -10,7 +10,15 @@
 
 ## 2. 초기 아키텍처
 
-사용자 → Route 53 → CloudFront → S3 Bucket
+```text
+사용자
+  ↓
+Route 53
+  ↓
+CloudFront Distribution + ACM Certificate
+  ↓
+S3 Bucket
+```
 
 ## 3. 구성 요소
 
