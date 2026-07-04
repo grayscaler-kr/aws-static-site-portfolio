@@ -60,13 +60,10 @@ aws-static-site-portfolio/
 ├── architecture/
 │   └── architecture.md
 ├── docs/
-│   ├── day01.md
-│   ├── day02.md
-│   ├── day03.md
-│   ├── day04.md
-│   └── day05.md
-├── notes/
-│   └── saa-review.md
+│   ├── progress.md
+│   ├── s3-cloudfront-connect.md
+│   ├── error-page.md
+│   └── route53-acm-concept.md
 ├── website/
 │   ├── index.html
 │   └── error.html
