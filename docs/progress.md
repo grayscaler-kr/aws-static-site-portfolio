@@ -53,10 +53,6 @@
 
 -   CloudFront를 통한 정적 웹사이트 정상 배포 확인
 
-### 상세 내용
-
-[S3, CloudFront 연계](./s3-cloudfront-connect.md)
-
 ----------
 
 ## Day 4
@@ -76,10 +72,6 @@
 
 -   캐시 정책 및 복구 기능 검증 완료
 
-### 상세 내용
-
-[S3, CloudFront 연계](./error-page.md)
-
 ----------
 
 ## Day 5
@@ -96,11 +88,15 @@
 
 -   Route 53 및 ACM 적용 준비 완료
 
-### 상세 내용
+----------
 
+## 상세 내용
+
+[S3, CloudFront 연계](./s3-cloudfront-connect.md)
+[CloudFront 에러 페이지 설정](./error-page.md)
 [Route 53 과 ACM 컨셉](./route53-acm-concept.md)
 
-----------
+
 
 ## 앞으로의 계획
 
