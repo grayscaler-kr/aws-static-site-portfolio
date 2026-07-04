@@ -93,9 +93,10 @@
 ## 상세 내용
 
 [S3, CloudFront 연계](./s3-cloudfront-connect.md)
-[CloudFront 에러 페이지 설정](./error-page.md)
-[Route 53 과 ACM 컨셉](./route53-acm.md)
 
+[CloudFront 에러 페이지 설정](./error-page.md)
+
+[Route 53 과 ACM 컨셉](./route53-acm.md)
 
 
 ## 앞으로의 계획
