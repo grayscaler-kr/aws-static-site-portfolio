@@ -115,13 +115,7 @@ CloudFront 캐시 정책으로 인해 S3 파일을 수정해도 즉시 반영되
 - CloudFront와 Route 53의 과금 요소를 확인하고 운영 비용도 함께 고려하였다.
 
 ## 진행 기록
-(차후 docs/progress.md 별도 파일로 분리 예정)
-
-- Day 1: 프로젝트 저장소 생성, 기본 디렉토리 구성, `index.html` 작성 및 GitHub 반영
-- Day 2: AWS 정적 웹사이트 배포 아키텍처 문서화, 사용 예정 AWS 서비스 역할 정리, SAA 복습 노트 갱신
-- Day 3: `index.html` 갱신 및 S3 배포, CloudFront 연결, 사이트 열림 확인
-- Day 4: CloudFront Custom Error Response 설정, `error.html` 반환 확인, Default root object 및 캐시 동작 확인, Invalidation과 S3 Versioning 확인
-- Day 5: Route 53과 ACM 개념 정리, 사용자 지정 도메인 및 HTTPS 적용 흐름 문서화
+[progress.md 참고](./docs/progress.md)
 
 ## 향후 계획
 - GitHub Actions를 이용한 자동 배포
