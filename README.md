@@ -60,6 +60,7 @@ aws-static-site-portfolio/
 ├── architecture/
 │   └── architecture.md
 ├── docs/
+│   ├── README.md
 │   ├── progress.md
 │   ├── s3-cloudfront-connect.md
 │   ├── error-page.md
