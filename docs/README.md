@@ -5,6 +5,13 @@
 ## 파일 목록
 
 - progress.md
+→ 프로젝트 진행 이력
+
 - s3-cloudfront-connect.md
+→ S3와 CloudFront 구축 과정
+
 - error-page.md
+→ CloudFront Custom Error Response 구성
+
 - route53-acm.md
+→ Route 53과 ACM 구성 및 HTTPS 적용
