@@ -8,51 +8,64 @@ AWS S3와 CloudFront를 이용해 정적 웹사이트를 배포하고,
 정적 콘텐츠 제공에 적합한 서버리스 아키텍처를 선택하여
 운영 부담을 줄이고 비용 효율적인 서비스를 구성하는 것을 목표로 했습니다.
 
+## Live Site
+
+- https://grayscaler.dev
+- https://www.grayscaler.dev
+
 ## 핵심 구성
 - S3 Bucket Private 구성
 - CloudFront OAC를 통한 S3 접근
 - Custom Error Response 구성
 - CloudFront Cache / Invalidation 테스트
 - S3 Versioning 기반 복구 가능성 검토
-- Route 53 / ACM 기반 도메인 및 HTTPS 적용 예정
+- Route 53 / ACM 기반 도메인 및 HTTPS 적용
 
 ## 목표 아키텍처
+
 ```text
-사용자
-   │
-HTTPS
-   │
-Route 53
-   │
-CloudFront
-   │
-Origin Access Control (OAC)
-   │
-S3 Bucket (Private)
+[DNS 조회]
+
+User
+  │
+  └── DNS Query ──> Route 53
+                      │
+                      └── A / AAAA Alias ──> CloudFront
+
+[콘텐츠 요청]
+
+User
+  │
+  └── HTTPS ──> CloudFront
+                  │  ACM Certificate
+                  │  OAC
+                  ▼
+             S3 Bucket (Private)
 ```
 
 ## 프로젝트 목표
-- S3 Bucket Private 구성 통해 S3 직접 접근 차단
-- CloudFront OAC 기반 보안 구성
-- ACM 이용 통한 HTTPS 기반 안전한 서비스 제공
-- Route 53 사용자 지정 도메인 연결
-- CloudFront 캐시 동작 이해
-- S3 Versioning을 통한 복구 검토
-- IAM 최소 권한 구성
+
+- S3 Bucket을 Private으로 구성하여 외부 직접 접근 차단
+- CloudFront OAC 기반의 안전한 S3 접근 구성
+- ACM 인증서를 이용한 HTTPS 서비스 제공
+- Route 53을 이용한 사용자 지정 도메인 연결
+- CloudFront 캐시 동작 이해 및 운영 시 캐시 전략 검증
+- S3 Versioning을 통한 객체 복구 가능성 확인
+- IAM 최소 권한 원칙 적용
 - AWS SAA 학습 내용을 실제 환경에서 검증
-- 운영 관점의 모니터링 및 비용 관리 확장
+- 운영 관점의 모니터링 및 비용 관리 요소 확장
 
 ## 사용한 AWS 서비스 및 선택 이유
 
-|서비스|용도|선택이유|
-|--|--|--|
-|Amazon S3|정적 웹 콘텐츠 저장|서버 운영 없이 정적 콘텐츠를 저장하고 제공하기 위해 선택|
-|Amazon CloudFront|콘텐츠 캐싱 및 HTTPS 제공|캐싱 통한 콘텐츠 전송 성능 향상, HTTPS 통한 안전한 서비스 제공 목적|
-|AWS Route 53|사용자 지정 도메인(DNS) 연결|사용자 지정 도메인(DNS)을 관리하고 CloudFront와 연동하기 위해 사용|
-|AWS Certificate Manager (ACM)|SSL/TLS 인증서 관리|HTTPS 적용을 위한 SSL/TLS 인증서를 무료로 발급 및 관리하기 위해 사용|
-|IAM|접근 권한 관리|최소 권한 원칙(Principle of Least Privilege)을 적용하기 위해 사용|
-|Origin Access Control (OAC)|S3 직접 접근 차단|CloudFront를 통해서만 S3에 접근하도록 구성하여 S3를 외부에 공개하지 않기 위해 사용|
-|S3 Versioning|객체 버전 관리 및 복구|이전 버전의 객체를 보관하여 복구 가능성을 확보하기 위해 사용|
+| 서비스 | 용도 | 선택 이유 |
+|---|---|---|
+| Amazon S3 | 정적 웹 콘텐츠 저장 | 서버 운영 없이 정적 콘텐츠를 저장하고 제공하기 위해 선택 |
+| Amazon CloudFront | 콘텐츠 캐싱 및 HTTPS 제공 | 캐싱을 통한 콘텐츠 전송 성능 향상과 HTTPS 기반의 안전한 서비스 제공을 위해 사용 |
+| Amazon Route 53 | 사용자 지정 도메인 및 DNS 관리 | 사용자 지정 도메인을 관리하고 CloudFront 배포로 연결하기 위해 사용 |
+| AWS Certificate Manager (ACM) | SSL/TLS 인증서 관리 | CloudFront에 HTTPS를 적용하고 인증서 발급 및 갱신을 관리하기 위해 사용 |
+| AWS Identity and Access Management (IAM) | 접근 권한 관리 | 최소 권한 원칙을 적용하기 위해 사용 |
+| Origin Access Control (OAC) | S3 직접 접근 차단 | CloudFront를 통해서만 S3 객체에 접근하도록 구성하기 위해 사용 |
+| S3 Versioning | 객체 버전 관리 및 복구 | 이전 객체 버전을 보관하여 변경 또는 삭제 시 복구 가능성을 확보하기 위해 사용 |
 
 ## 디렉토리 구조
 ```text
@@ -64,7 +77,7 @@ aws-static-site-portfolio/
 │   ├── progress.md
 │   ├── s3-cloudfront-connect.md
 │   ├── error-page.md
-│   └── route53-acm-concept.md
+│   └── route53-acm.md
 ├── website/
 │   ├── index.html
 │   └── error.html
@@ -79,8 +92,8 @@ aws-static-site-portfolio/
 - Bucket Policy는 `s3:GetObject`로 제한
 
 #### 운영 고려 사항 
-웹 콘텐츠는 CloudFront를 통해서만 접근하도록 구성하여  S3 직접 접근을 차단하였다.
-이를 통해 S3 Bucket을 외부에 공개하지 않은 상태에서 콘텐츠 제공이 가능하도록 설계했다.
+웹 콘텐츠는 CloudFront를 통해서만 접근하도록 구성하여 S3 직접 접근을 차단하였다.
+이를 통해 S3 Bucket을 외부에 공개하지 않은 상태에서도 콘텐츠를 제공할 수 있도록 설계하였다.
 
 ### 2. 캐시 운영
 - CloudFront 캐시로 인해 S3 파일 수정 후에도 이전 파일이 보일 수 있음을 확인
@@ -123,10 +136,13 @@ CloudFront 캐시 정책으로 인해 S3 파일을 수정해도 즉시 반영되
 - Terraform을 이용한 IaC 구성
 
 ## 이번 프로젝트에서 배운 점
+
 이번 프로젝트를 통해
+
 - S3 Public Access와 Bucket Policy의 차이를 이해하였다.
 - CloudFront 캐시가 서비스 운영에 미치는 영향을 확인하였다.
 - SSE-KMS 사용 시 CloudFront 접근 제한 문제가 발생할 수 있음을 경험하였다.
+- Route 53의 DNS 위임, Alias 레코드, CloudFront Alternate Domain Name의 역할 차이를 이해하였다.
 - 단순 구축보다 운영 중 발생 가능한 문제를 문서화하는 것이 중요함을 배웠다.
 
 ## 운영자로서 얻은 경험

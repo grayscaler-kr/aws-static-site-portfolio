@@ -14,4 +14,4 @@
 → CloudFront Custom Error Response 구성
 
 - route53-acm.md
-→ Route 53과 ACM 구성 및 HTTPS 적용
+→ Route 53, ACM 및 HTTPS 구성

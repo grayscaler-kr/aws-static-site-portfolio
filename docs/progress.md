@@ -90,19 +90,57 @@
 
 ----------
 
+## Day 6
+
+**도메인 등록 및 Route 53·ACM 구성**
+
+### 작업 내용
+
+- `grayscaler.dev` 도메인 등록
+- Route 53 Public Hosted Zone 생성
+- 도메인 등록 기관의 네임서버를 Route 53 NS로 변경
+- `nslookup`을 통한 DNS 위임 확인
+- `us-east-1` 리전에서 ACM 인증서 요청
+- Route 53 CNAME 레코드를 이용한 DNS Validation
+
+### 결과
+
+- `grayscaler.dev`의 DNS 관리 권한을 Route 53으로 정상 위임
+- `grayscaler.dev`, `*.grayscaler.dev` ACM 인증서 발급 완료
+
+----------
+
+## Day 7
+
+**사용자 지정 도메인 및 HTTPS 연결**
+
+### 작업 내용
+
+- CloudFront에 `grayscaler.dev`, `www.grayscaler.dev`를 Alternate Domain Name으로 등록
+- CloudFront에 ACM 인증서 연결
+- Route 53에 CloudFront 배포를 대상으로 A/AAAA Alias 레코드 생성
+- HTTP 요청의 HTTPS 리디렉션 확인
+- DNS, HTTPS 및 인증서 적용 상태 검증
+- `www.grayscaler.dev` 접속 실패 원인 분석 및 Alternate Domain Name 누락 해결
+
+### 결과
+
+- `grayscaler.dev`, `www.grayscaler.dev`를 통한 정적 웹사이트 HTTPS 접속 완료
+- Route 53, CloudFront, ACM, S3 연동 및 HTTP→HTTPS 리디렉션 검증 완료
+
+----------
+
 ## 상세 내용
 
 [S3, CloudFront 연계](./s3-cloudfront-connect.md)
 
 [CloudFront 에러 페이지 설정](./error-page.md)
 
-[Route 53 과 ACM 컨셉](./route53-acm.md)
+[Route 53, ACM 및 HTTPS 구성](./route53-acm.md)
 
 
 ## 앞으로의 계획
 
--   Route 53 구성
--   ACM 인증서 적용
 -   GitHub Actions 기반 자동 배포
 -   CloudFront Cache Invalidation 자동화
 -   CloudWatch 모니터링

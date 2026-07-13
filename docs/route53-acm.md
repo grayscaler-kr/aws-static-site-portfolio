@@ -1,4 +1,4 @@
-# Route 53 과 ACM 컨셉
+# Route 53, ACM 및 HTTPS 구성
 
 ## 1. 학습 목표
 
@@ -561,22 +561,262 @@ S3 Bucket
 
 ---
 
-## 16. Next Step
+## 16. 실제 구축
 
-도메인이 준비되었다고 가정하고 실제 사용자 지정 도메인과 HTTPS 적용 흐름을 정리한다.
+별도의 도메인 등록 기관(예: 가비아)에서 도메인을 등록한 후, Route 53과 ACM을 이용하여 사용자 지정 도메인과 HTTPS를 실제로 적용하는 과정을 진행한다.
 
-예상 작업은 다음과 같다.
+### 16.1 Hosted Zone 생성 
 
-- Route 53 Hosted Zone 생성 또는 확인
-- ACM 인증서 요청
-- DNS Validation 진행
-- CloudFront에 Alternate Domain Name 추가
-- CloudFront에 ACM 인증서 연결
-- Route 53 Alias Record 생성
-- 사용자 지정 도메인 접속 확인
+AWS Management Console에서 **Route 53 → Hosted zones** 메뉴로 이동한다.
+이후 Create hosted zone 을 선택하면 Hosted Zone 생성 화면으로 넘어간다.
 
-예상 최종 구조는 다음과 같다.
+Hosted Zone 생성 화면에서 다음 항목을 입력한다.
+- Domain name : `grayscaler.dev`
+- Type : Public hosted zone
+
+Public hosted zone은 인터넷에서 접근 가능한 도메인의 DNS 정보를 관리하기 위한 Hosted Zone이다.
+
+이번 프로젝트에서는 가비아에서 등록한 `grayscaler.dev`를 인터넷에 공개하기 위해 Public hosted zone을 사용하였다.
+
+이후 Create hosted zone을 선택하면 Hosted Zone이 정상적으로 생성된다.
+
+### 16.2 NS / SOA 자동 생성
+
+Public Hosted Zone을 생성하면 Route 53은 기본적으로 NS(Name Server)와 SOA(Start of Authority) 레코드를 자동 생성한다.
+
+- NS : 해당 도메인의 DNS 질의를 처리할 네임서버 정보
+- SOA : DNS Zone의 관리 정보 및 동기화 정책을 관리하는 기본 레코드
+
+이번 프로젝트에서는 Hosted Zone 생성과 동시에 NS 레코드 1개(4개의 네임서버 정보 포함)와 SOA 레코드가 자동 생성되는 것을 확인하였다.
+
+이후 가비아의 네임서버를 Route 53의 NS 정보로 변경하여 DNS 관리 권한을 AWS로 이전할 예정이다.
+
+### 16.3 가비아 네임서버(NS) 변경
+
+가비아에 로그인 후 My가비아에서 **도메인 통합 관리툴**을 선택한다.
+
+Gabia 도메인 통합 관리에서 **도메인 관리 → 전체 도메인 → grayscaler.dev** 선택한다.
+
+도메인 상세에서 **네임서버/DNS호스트/DNSSEC** 선택한다.
+
+네임서버에서 **설정** 선택한다.
+
+기존 가비아에서 부여한 네임서버를 지우고 Route 53에서 생성한 Public hosted zone의 NS 레코드에 있는 aws 관리 네임서버를 입력한다.
+등록된 네임서버는 아래와 같다.
+
+- ns-1977.awsdns-55.co.uk
+- ns-1020.awsdns-63.net
+- ns-1169.awsdns-18.org
+- ns-341.awsdns-42.com
+
+가비아에서는 네임서버 변경할 때 휴대전화 또는 이메일 통한 소유자 인증이 필요하니 기호에 맞춰서 인증 진행한다.
+소유자 인증 완료하면 **적용** 버튼이 활성화되니 선택한다.
+
+변경 신이 완료되면 변경 결과를 확인한다.
+
+#### 운영 고려 사항
+
+Hosted Zone을 생성하는 것만으로는 인터넷에서 Route 53을 사용하지 않는다.
+
+도메인 등록 기관의 네임서버를 Route 53의 NS 정보로 변경해야 해당 도메인의 DNS 질의가 Route 53으로 전달된다.
+
+### 16.4 DNS 위임 확인
+
+네임서버 변경 후 `nslookup`을 이용하여 DNS 위임이 정상적으로 이루어졌는지 확인하였다.
+
+```bash
+nslookup -type=ns grayscaler.dev
+```
+
+응답 결과 Route 53에서 생성된 네임서버 정보가 반환되는 것을 확인하였다.
+
+이를 통해 `grayscaler.dev`의 DNS 관리 권한이 Route 53으로 정상 위임되었음을 확인하였다.
+
+DNS 위임이 완료된 이후에는 Route 53에서 생성하는 DNS 레코드가 인터넷에 반영된다.
+
+이후 ACM 인증서 발급 및 DNS Validation을 진행할 예정이다.
+
+### 16.5 ACM 인증서 요청
+
+CloudFront에 사용자 지정 도메인과 HTTPS를 적용하기 위한 준비 단계로 ACM에서 Public Certificate를 요청한다.
+
+CloudFront에서 사용할 ACM 인증서는 반드시 `us-east-1`(US East, N. Virginia) 리전에 생성되어 있어야 하므로, AWS Management Console의 리전을 `us-east-1`로 변경한 후 작업을 진행하였다.
+
+-   AWS Certificate Manager (ACM)로 이동한 후 **Request a certificate**를 선택한다.
+-   Certificate type은 기본값인 **Request a public certificate**를 선택한다.
+-   Domain names에 다음 두 도메인을 입력한다.
+    -   `grayscaler.dev`
+    -   `*.grayscaler.dev`
+-   Allow export는 **Disable export**를 선택한다.
+-   Validation method는 **DNS validation**을 선택한다.
+-   Key algorithm은 **RSA 2048**을 선택한다.
+-   설정을 확인한 후 **Request**를 선택하여 인증서를 요청한다.
+
+인증서 요청 직후에는 도메인 소유권 검증이 완료되지 않았으므로 인증서 상태가 `Pending validation`으로 표시된다.
+
+#### 운영 고려 사항
+
+CloudFront는 글로벌 서비스이지만, CloudFront의 사용자 HTTPS 인증서로 사용할 ACM 인증서는 반드시 `us-east-1` 리전에 존재해야 한다.
+
+다른 리전에 생성한 ACM 인증서는 CloudFront의 사용자 지정 인증서로 선택할 수 없다.
+
+**Disable export**를 선택하면 인증서의 개인 키를 AWS 외부로 내보낼 수 없다. 이번 프로젝트에서는 인증서를 CloudFront에서만 사용할 예정이므로 개인 키를 외부 서버에 배포할 필요가 없으며, AWS가 인증서와 개인 키를 관리하도록 구성하였다.
+
+**DNS validation**은 ACM에서 제공하는 CNAME 레코드를 DNS에 등록하여 도메인의 제어 권한을 증명하는 방식이다. Route 53에서 DNS를 관리하는 경우 ACM 콘솔을 통해 검증용 CNAME 레코드를 자동으로 생성할 수 있다.
+
+**RSA 2048**은 인증서에 사용되는 공개키·개인키 쌍의 암호 알고리즘이다. 다양한 브라우저와 클라이언트에서 폭넓게 지원되므로 이번 프로젝트에서는 호환성을 고려해 RSA 2048을 선택하였다.
+
+### 16.6 DNS Validation
+
+ACM 인증서 요청 후 인증서 상태가 `Pending validation`으로 표시되는 것을 확인하였다.
+
+인증서 요청 대상은 다음과 같다.
+
+-   `grayscaler.dev`
+-   `*.grayscaler.dev`
+    
+ACM은 도메인 소유권 검증을 위해 CNAME 레코드의 이름과 값을 생성한다.
+
+-   CNAME name: Route 53에 생성할 레코드 이름
+-   CNAME value: 해당 CNAME 레코드가 연결할 ACM 검증 주소
+
+이번 프로젝트에서는 `grayscaler.dev`의 DNS를 Route 53에서 관리하고 있으므로, ACM의 **Create records in Route 53** 기능을 이용해 검증용 CNAME 레코드를 자동으로 생성하였다.
+
+Route 53 Hosted Zone에서 NS, SOA 레코드와 함께 ACM 검증용 CNAME 레코드가 추가된 것을 확인하였다.
+
+CNAME 레코드 생성 직후에는 인증서 상태가 `Pending validation`으로 유지되며, ACM이 DNS 레코드를 확인하면 상태가 `Issued`로 변경된다.
+
+#### 운영 고려 사항
+
+DNS Validation에 사용되는 CNAME 레코드는 인증서가 발급된 이후에도 삭제하지 않는다.
+
+검증용 CNAME 레코드가 유지되어야 ACM에서 인증서를 자동 갱신할 수 있다.
+
+### 16.7 인증서 발급 확인
+
+ACM에서 `grayscaler.dev`와 `*.grayscaler.dev`를 대상으로 Public Certificate를 요청하였다.
+
+DNS Validation을 위해 ACM이 제공한 CNAME name/value 쌍을 Route 53 Hosted Zone에 등록하였으며, ACM이 해당 DNS 레코드를 확인한 뒤 인증서 상태가 `Pending validation`에서 `Issued`로 변경되었다.
+
+도메인별 검증 상태도 모두 `Success`로 표시되는 것을 확인하였다.
+
+이를 통해 `grayscaler.dev`에 대한 도메인 제어 권한 검증이 완료되었고, CloudFront에서 사용할 수 있는 ACM 인증서가 정상적으로 발급되었다.
+
+#### 운영 고려 사항
+
+현재 인증서는 아직 CloudFront에 연결하지 않았으므로 `In use` 상태는 `No`로 표시된다.
+
+### 16.8 CloudFront 사용자 지정 도메인 및 ACM 인증서 연결
+
+기존 CloudFront 배포에 사용자 지정 도메인과 ACM 인증서를 연결하였다.
+
+CloudFront 배포의 General > Edit 선택 후 편집 화면에서 다음 항목으로 구성하였다.
+
+- Alternate domain name: `grayscaler.dev`
+- Custom SSL certificate: `grayscaler.dev`와 `*.grayscaler.dev`를 포함한 ACM 인증서
+- Security policy: `TLSv1.2_2021`
+- Supported HTTP versions: HTTP/2, HTTP/3
+
+CloudFront는 Alternate Domain Name에 추가한 도메인이 연결된 인증서의 도메인 범위에 포함되는지 확인한다.
+
+이번 프로젝트에서 사용한 ACM 인증서에는 발급 당시 `grayscaler.dev`가 직접 포함되어 있으므로 CloudFront에 정상적으로 연결할 수 있었다.
+
+설정 저장 후 CloudFront의 **Last modified** 항목이 `Deploying`으로 표시되었으며, 이는 변경 사항이 CloudFront 엣지 로케이션에 배포되고 있음을 의미한다.
+
+일정 시간이 지난 후 `Deploying` 표시가 사라지고 마지막 수정 시간이 표시되었으며, 이를 통해 설정 배포가 완료되었음을 확인하였다.
+
+#### 운영 고려 사항
+
+CloudFront에 Alternate Domain Name과 ACM 인증서를 연결하는 것만으로는 DNS 연결이 완료되지 않는다.
+
+배포가 완료된 후 Route 53에서 `grayscaler.dev`를 CloudFront 배포로 연결하는 Alias 레코드를 별도로 생성해야 한다.
+
+### 16.9 HTTPS 리디렉션 설정 확인
+
+CloudFront 배포의 **Behaviors**에서 Default behavior를 확인하였다.
+
+Viewer protocol policy가 **Redirect HTTP to HTTPS**로 설정되어 있어 별도의 변경은 진행하지 않았다.
+
+이 설정에 따라 사용자가 HTTP로 접속하더라도 CloudFront가 HTTPS 주소로 리디렉션한다.
+
+또한 정적 웹사이트 조회만 필요하므로 Allowed HTTP methods는 `GET, HEAD`로 유지하였다.
+
+#### 운영 고려 사항
+
+CloudFront에 사용자 지정 도메인과 ACM 인증서를 연결하고 HTTPS 리디렉션을 설정하더라도, DNS에서 해당 도메인을 CloudFront 배포로 연결하지 않으면 사용자 지정 도메인으로 접속할 수 없다.
+
+다음 단계에서는 Route 53에 A Alias 레코드를 생성하여 `grayscaler.dev`를 CloudFront 배포로 연결한다.
+
+### 16.10 Route 53 Alias 레코드 생성
+
+`grayscaler.dev`를 기존 CloudFront 배포로 연결하기 위해 Route 53 Hosted Zone에 Alias 레코드를 생성하였다.
+
+생성한 레코드는 다음과 같다.
+
+- A Alias: IPv4 요청을 CloudFront 배포로 연결
+- AAAA Alias: IPv6 요청을 CloudFront 배포로 연결
+
+두 레코드 모두 다음 CloudFront 배포를 대상으로 설정하였다.
+
+- `daxb744d4ejyw.cloudfront.net`
+
+Record name은 비워 두어 Hosted Zone의 루트 도메인인 `grayscaler.dev`에 레코드가 생성되도록 하였다.
+
+Routing policy는 **Simple routing**을 사용하였으며, Evaluate target health는 비활성화하였다.
+
+#### 운영 고려 사항
+
+CloudFront 배포에는 Route 53 레코드 이름과 일치하는 Alternate Domain Name이 미리 등록되어 있어야 한다.
+
+이번 프로젝트에서는 CloudFront의 Alternate Domain Name에 `grayscaler.dev`를 등록한 후, Route 53에서 A 및 AAAA Alias 레코드를 생성하였다.
+
+### 16.11 최종 접속 및 HTTPS 검증
+
+Route 53 Alias 레코드 생성 후 DNS 조회와 브라우저 접속을 통해 전체 구성을 검증하였다.
+
+다음 명령으로 `grayscaler.dev`의 DNS 응답을 확인하였다.
+
+```bash
+nslookup grayscaler.dev
+```
+
+조회 결과 CloudFront에서 사용하는 IPv4 및 IPv6 주소가 반환되는 것을 확인하였다.
+
+브라우저에서는 다음 항목을 확인하였다.
+
+-   `https://grayscaler.dev` 정상 접속
+-   `http://grayscaler.dev` 접속 시 HTTPS로 자동 전환
+-   S3에 저장된 정적 웹페이지 정상 출력
+-   인증서 발급 대상이 `grayscaler.dev`로 표시
+-   인증서 발급 기관이 Amazon 계열 인증 기관으로 표시
+    
+
+이를 통해 다음 연결이 정상적으로 동작함을 확인하였다.
 
 ```text
-User → Route 53 → CloudFront + ACM → S3 Bucket
+User
+  ↓ DNS Query
+Route 53
+  ↓ A / AAAA Alias
+CloudFront + ACM
+  ↓ OAC
+S3 Bucket (Private)
 ```
+
+#### 검증 시 참고 사항
+
+초기 인증서 확인 시 로컬 광고 차단 프로그램인 Unicorn Pro가 HTTPS 트래픽에 개입하여 `Unicorn Root CA`가 표시되었다.
+
+Unicorn Pro를 일시 중지하고 브라우저 데이터를 삭제한 후 다시 확인한 결과, 인증서 발급 기관이 `Amazon RSA 2048 M01`로 정상 표시되었다.
+
+이를 통해 AWS 설정 문제가 아니라 로컬 HTTPS 필터링 프로그램의 영향이었음을 확인하였으며, CloudFront에 연결한 ACM 인증서가 실제 HTTPS 요청에 정상 적용되었음을 검증하였다.
+
+#### 트러블슈팅: www 도메인 접속 실패
+
+Route 53에 `www.grayscaler.dev`의 A/AAAA Alias 레코드를 생성했지만 페이지가 정상적으로 열리지 않았다.
+
+원인은 CloudFront 배포의 Alternate Domain Name에 `www.grayscaler.dev`가 등록되어 있지 않았기 때문이다.
+
+Route 53 레코드는 DNS 요청을 CloudFront 배포로 전달하는 역할을 하지만, CloudFront가 해당 호스트명의 요청을 처리하려면 Alternate Domain Name에도 동일한 도메인이 등록되어 있어야 한다.
+
+CloudFront Alternate Domain Name에 `www.grayscaler.dev`를 추가한 후 정상 접속되는 것을 확인하였다.
