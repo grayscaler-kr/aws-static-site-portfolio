@@ -28,3 +28,14 @@ jobs:
 
       - name: Verify AWS identity
         run: aws sts get-caller-identity
+
+      - name: Deploy website to S3
+        run: |
+          aws s3 sync website/ s3://grayscaler-static-website-bucket/ \
+            --delete
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id E3DJWU1GIGGRVN \
+            --paths "/*"
