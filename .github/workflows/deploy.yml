@@ -20,5 +20,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Test workflow
-        run: echo "GitHub Actions workflow started"
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: arn:aws:iam::880192676279:role/GitHubActionsStaticSiteDeployRole
+          aws-region: ap-northeast-2
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
