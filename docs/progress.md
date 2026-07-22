@@ -130,6 +130,30 @@
 
 ----------
 
+## Day 8
+
+**GitHub Actions 기반 자동 배포 구성**
+
+### 작업 내용
+
+- GitHub Actions Workflow 생성
+- GitHub OIDC Provider 등록
+- GitHub Actions 전용 IAM Role 생성
+- 특정 저장소와 `main` 브랜치로 Trust Policy 제한
+- S3 및 CloudFront 작업을 위한 최소 권한 정책 적용
+- OIDC 기반 임시 자격 증명 발급 확인
+- S3 정적 콘텐츠 자동 배포 구성
+- CloudFront Cache Invalidation 자동화
+- 실제 웹사이트 변경 사항 반영 검증
+
+### 결과
+
+- 장기 Access Key 없이 GitHub Actions와 AWS 연동 완료
+- `website/` 변경 사항 Push 시 S3 자동 배포 및 CloudFront 캐시 무효화 확인
+- `grayscaler.dev`와 `www.grayscaler.dev`에서 최신 콘텐츠 반영 확인
+
+----------
+
 ## 상세 내용
 
 [S3, CloudFront 연계](./s3-cloudfront-connect.md)
@@ -138,6 +162,7 @@
 
 [Route 53, ACM 및 HTTPS 구성](./route53-acm.md)
 
+[GitHub Actions 기반 자동 배포](./github-actions-deploy.md)
 
 ## 앞으로의 계획
 

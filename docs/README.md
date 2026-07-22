@@ -15,3 +15,6 @@
 
 - route53-acm.md
 → Route 53, ACM 및 HTTPS 구성
+
+- github-actions-deploy.md
+→ GitHub Actions 기반 자동 배포
